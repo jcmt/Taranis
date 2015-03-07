@@ -536,3 +536,11 @@ def interp3d(A, PR, val):
   interpVal[LEVNEED] = A[s[0]-1, LEVNEED]
 
   return interpVal
+
+def interp_delaunay(x0,y0,v0,x1, y1):
+  from matplotlib import tri
+
+  intp = tri.delaunay.Triangulation(x0.flatten(), y0.flatten())
+  v1 = intp.nn_interpolator(v0.flatten())(x1, y1)
+
+  return v1
