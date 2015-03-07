@@ -422,7 +422,7 @@ class get:
           clev = np.arange(norm.min(), norm.max(), (norm.max() - norm.min())/ 8.)
         cbar = m.colorbar(cs, location='right', ticks=clev, format=fmt, pad='5%')
         cbar.ax.tick_params(labelsize=18)
-      return self.time(tstep=tstep)
+      return m
 
   def CrossPcolor(self, VAR, tstep=1, latitude=None, longitude=None, colormap=None, \
                   colorbar=False, norm=None, ymax=20000, ymin=0, pcolor=True, lev=None, **kargs):
@@ -437,14 +437,14 @@ class get:
       pos_lat = slice(0, np.size(self.lat(), axis=0))
       y = self.height(tstep=tstep, nlev=':', ny=pos_lat, nx=pos_lon)
       x = np.tile(self.lat()[:, pos_lon], (self.dim()[1], 1))
-      xlabel = 'Longitude ($^\circ$)'
+      xlabel = 'Latitude ($^\circ$)'
 
     elif longitude == None:
       pos_lon = slice(0, np.size(self.lon(), axis=1))
       pos_lat = np.argmin(abs(self.lat()[:, 1] - latitude))
       y = self.height(tstep=tstep, ny=pos_lat, nx=pos_lon)
       x = np.tile(self.lon()[pos_lat, :], (self.dim()[1], 1))
-      xlabel = 'Latitude ($^\circ$)'
+      xlabel = 'Longitude ($^\circ$)'
 
     else:
       return('I cant deal with this.. yet!!!')
@@ -480,6 +480,8 @@ class get:
     plt.ylabel('Height (m)')
     plt.ylim([ymin, ymax])
     plt.xlim(x.min(), x.max())
+
+    return m
 
   def stloc(self, latitude, longitude):
     pos_lat = np.argmin(abs(self.lat()[:, 1] - latitude))
