@@ -481,8 +481,6 @@ class get:
     plt.ylim([ymin, ymax])
     plt.xlim(x.min(), x.max())
 
-    return m
-
   def stloc(self, latitude, longitude):
     pos_lat = np.argmin(abs(self.lat()[:, 1] - latitude))
     pos_lon = np.argmin(abs(self.lon()[1, :] - longitude))
