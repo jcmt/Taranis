@@ -234,7 +234,7 @@ class get:
 
     return WRF_RH
 
-  def SHEAR(self, tstep=0, level1=200., level2=850.):
+  def SHEAR(self, tstep=0, level1=200., level2=850., leveltype='pressure'):
     '''
     Program calculates horizontal wind shear
 
@@ -249,17 +249,28 @@ class get:
     From NCAR VAPOR python utils
     '''
 
-    PR = self.getvar('P', tstep=tstep)
-    U = self.getvar('U', tstep=tstep)
-    V = self.getvar('V', tstep=tstep)
+    if leveltype == 'pressure':
+      print(leveltype)
+      PR = self.getvar('P', tstep=tstep)
+      U = self.getvar('U', tstep=tstep)
+      V = self.getvar('V', tstep=tstep)
 
-    PR *= 0.01
-    uinterp1 = interp3d(U, PR, level1)
-    uinterp2 = interp3d(U, PR, level2)
-    vinterp1 = interp3d(V, PR, level1)
-    vinterp2 = interp3d(V, PR, level2)
-    result = (uinterp1-uinterp2)*(uinterp1-uinterp2)+(vinterp1-vinterp2)*(vinterp1-vinterp2)
-    result = np.sqrt(result)
+      PR *= 0.01
+      uinterp1 = interp3d(U, PR, level1)
+      uinterp2 = interp3d(U, PR, level2)
+      vinterp1 = interp3d(V, PR, level1)
+      vinterp2 = interp3d(V, PR, level2)
+      result = (uinterp1-uinterp2)*(uinterp1-uinterp2)+(vinterp1-vinterp2)*(vinterp1-vinterp2)
+      result = np.sqrt(result)
+
+    elif leveltype == 'eta':
+      print(leveltype)
+      uinterp1 = self.getvar('U', tstep=tstep, nlev=level1, nx=':-1')
+      uinterp2 = self.getvar('U', tstep=tstep, nlev=level2, nx=':-1')
+      vinterp1 = self.getvar('V', tstep=tstep, nlev=level1, ny=':-1')
+      vinterp2 = self.getvar('V', tstep=tstep, nlev=level2, ny=':-1')
+      result = (uinterp1-uinterp2)*(uinterp1-uinterp2)+(vinterp1-vinterp2)*(vinterp1-vinterp2)
+      result = np.sqrt(result)
 
     return result
 
@@ -340,7 +351,7 @@ class get:
 
     return RI
 
-  def pcolor(self, VAR, tstep=None, colorbar=True, level=0, pcolor=False, norm=None, **kargs):
+  def pcolor(self, VAR, tstep=None, colorbar=True, level=0, pcolor=False, norm=None, coastcolor='k', **kargs):
     '''
     lat-lon plot on a base map
 
@@ -389,17 +400,18 @@ class get:
         res = 'h'
 
       plt.figure()
+      ax = plt.axes()
       m = Basemap(projection=proj, llcrnrlat=llcrnrlat, urcrnrlat=urcrnrlat, \
                     llcrnrlon=llcrnrlon, urcrnrlon=urcrnrlon, lat_1=lat_1, \
-                    lat_2=lat_2, lat_0=lat_0, lon_0=lon_0, resolution=res)
+                    lat_2=lat_2, lat_0=lat_0, lon_0=lon_0, resolution=res, area_thresh=10000)
 
-      m.drawcoastlines(color='black', linewidth=2)
-      m.drawcountries(linewidth=1.5)
+      m.drawcoastlines(color=coastcolor, linewidth=2)
+      m.drawcountries(color=coastcolor, linewidth=1.5)
 
       parallels = ticks.loose_label(self.lat().min(),self.lat().max())
-      m.drawparallels(parallels, labels=[1, 0, 0, 0], fontsize=20)
+      m.drawparallels(parallels, labels=[1, 0, 0, 0], fontsize=14)
       meridians = ticks.loose_label(self.lon().min(),self.lon().max())
-      m.drawmeridians(meridians, labels=[0, 0, 0, 1], fontsize=20)
+      m.drawmeridians(meridians, labels=[0, 0, 0, 1], fontsize=14)
 
       x, y = m(self.lon(), self.lat())
 
@@ -408,26 +420,27 @@ class get:
           levels = np.linspace(VAR.min(), VAR.max(), 200)
         else:
           levels = np.linspace(norm.min(), norm.max(), 200)
-        cs = plt.contourf(x, y, VAR, levels=levels, **kargs)
+        cs = ax.contourf(x, y, VAR, levels=levels, **kargs)
       else:
-        cs = m.pcolormesh(x, y, VAR, **kargs)
+        cs = ax.pcolormesh(x, y, VAR, **kargs)
 
-      plt.title(self.time(tstep=tstep))
+      ax.set_title(self.time(tstep=tstep))
 
       if colorbar == True:
         fmt = plt.matplotlib.ticker.FormatStrFormatter("%.1f")
         if norm == None:
-          clev = np.arange(VAR.min(), VAR.max(), (VAR.max() - VAR.min())/ 8.)
+          clev = np.linspace(np.round(VAR.min()), np.round(VAR.max()), 10, endpoint=True)
         else:
-          clev = np.arange(norm.min(), norm.max(), (norm.max() - norm.min())/ 8.)
+          clev = np.linspace(np.round(norm.min()), np.round(norm.max()), 10, endpoint=True)
         cbar = m.colorbar(cs, location='right', ticks=clev, format=fmt, pad='5%')
-        cbar.ax.tick_params(labelsize=18)
-      return m
+        cbar.ax.tick_params(labelsize=12)
+      return ax, m
 
-  def CrossPcolor(self, VAR, tstep=1, latitude=None, longitude=None, colormap=None, \
-                  colorbar=False, norm=None, ymax=20000, ymin=0, pcolor=True, lev=None, **kargs):
+  def CrossPcolor(self, VAR, tstep=1, latitude=None, longitude=None, colorbar=True, \
+                  norm=None, ymax=20000, ymin=0, pcolor=True, lev=None, **kargs):
     import matplotlib.pyplot as plt
     plt.figure()
+    ax = plt.axes(axisbg='grey')
 
     if latitude == None and longitude == None:
       return('A latitude and longitude range must be chosen...')
@@ -466,20 +479,26 @@ class get:
       else:
         levels = np.linspace(lev[0], lev[1], 100)
 
-      cs = plt.contourf(x[0:VAR.shape[0], :], y[0:VAR.shape[0], :], VAR, cmap=colormap, norm=norm, levels=levels, **kargs)
+      cs = ax.contourf(x[0:VAR.shape[0], :], y[0:VAR.shape[0], :], VAR, norm=norm, levels=levels, **kargs)
     else:
-      cs = plt.pcolormesh(x[0:VAR.shape[0], :], y[0:VAR.shape[0], :], VAR, cmap=colormap, norm=norm, **kargs)
+      cs = ax.pcolormesh(x[0:VAR.shape[0], :], y[0:VAR.shape[0], :], VAR, norm=norm, **kargs)
 
     if colorbar == True:
       fmt = plt.matplotlib.ticker.FormatStrFormatter("%.1f")
-      clev = np.arange(VAR.min(), VAR.max(), (VAR.max() - VAR.min())/ 8.)
+      if lev == None:
+        clev = np.linspace(np.round(VAR.min()), np.round(VAR.max()), 10)
+      else:
+        clev = np.linspace(lev[0], lev[1], 10)
+
       cbar = plt.colorbar(cs, ticks=clev, format=fmt, norm=norm)
 
-    plt.title(self.time()[tstep])
-    plt.xlabel(xlabel)
-    plt.ylabel('Height (m)')
-    plt.ylim([ymin, ymax])
-    plt.xlim(x.min(), x.max())
+    ax.set_title(self.time()[tstep])
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel('Height (m)')
+    ax.set_ylim([ymin, ymax])
+    ax.set_xlim(x.min(), x.max())
+
+    return ax
 
   def stloc(self, latitude, longitude):
     pos_lat = np.argmin(abs(self.lat()[:, 1] - latitude))
@@ -544,3 +563,80 @@ def interp_delaunay(x0,y0,v0,x1, y1):
   v1 = intp.nn_interpolator(v0.flatten())(x1, y1)
 
   return v1
+
+def var_border(v,di=1,dj=1):
+  '''
+  Border of 2d numpy array
+  di,dj is the interval between points along columns and lines
+  Corner points are kept even with di and dj not 1
+  '''
+  j,i=v.shape
+  if (di,dj)==(1,1):
+    xb=np.arange(2*i+2*j,dtype=v.dtype)
+    yb=np.arange(2*i+2*j,dtype=v.dtype)
+    xb[0:j] = v[:,0]
+    xb[j:j+i] = v[-1,:]
+    xb[j+i:j+i+j] = np.flipud(v[:,-1])
+    xb[j+i+j:] = np.flipud(v[0,:])
+  else:
+    # ensure corner points are kept!!
+    tmp1 = v[::dj,0]
+    tmp2 = v[-1,::di]
+    tmp3 = np.flipud(v[:,-1])[::dj]
+    tmp4 = np.flipud(v[0,:])[::di]
+    xb=np.concatenate((tmp1,tmp2,tmp3,tmp4))
+  return xb
+
+
+def plot_domains(dlist):
+  from mpl_toolkits.basemap import Basemap
+  import matplotlib.pyplot as plt
+  import ticks
+
+  wrf = {}
+  for i in range(1, len(dlist)+1):
+    wrf['d%02d'%i] = get(dlist[i-1])
+
+  if wrf['d01'].nc.MAP_PROJ == 1:
+    proj = 'lcc'
+  elif wrf['d01'].nc.MAP_PROJ == 3:
+    proj = 'merc'
+  else:
+    return('Projection not suported')
+
+  lat_1 = wrf['d01'].nc.TRUELAT1
+  lat_2 = wrf['d01'].nc.TRUELAT2
+  lon_0 = wrf['d01'].nc.CEN_LON
+  lat_0 = wrf['d01'].nc.CEN_LAT
+  llcrnrlat = wrf['d01'].lat().min() - 5
+  urcrnrlat = wrf['d01'].lat().max() + 5
+  llcrnrlon = wrf['d01'].lon().min() - 5
+  urcrnrlon = wrf['d01'].lon().max() + 5
+
+  plt.figure()
+  ax = plt.axes()
+  m = Basemap(projection=proj, llcrnrlat=llcrnrlat, urcrnrlat=urcrnrlat, \
+  llcrnrlon=llcrnrlon, urcrnrlon=urcrnrlon, lat_1=lat_1, \
+  lat_2=lat_2, lat_0=lat_0, lon_0=lon_0, resolution='i')
+
+  #m.drawcoastlines(color='black', linewidth=2)
+  #m.drawcountries(linewidth=1.5)
+  m.bluemarble()
+
+  parallels = ticks.loose_label(llcrnrlat, urcrnrlat)
+  m.drawparallels(parallels, labels=[1, 0, 0, 0], fontsize=14)
+  meridians = ticks.loose_label(llcrnrlon, urcrnrlon)
+  m.drawmeridians(meridians, labels=[0, 0, 0, 1], fontsize=14)
+
+  for i in range(1,len(dlist)+1):
+    xb = var_border(wrf['d%02d'%i].lon())
+    yb = var_border(wrf['d%02d'%i].lat())
+
+    x, y = m(xb,yb)
+    tx, ty = m(wrf['d%02d'%i].lon()[-1,0], wrf['d%02d'%i].lat()[-1,0]+0.5)
+    colors = ['lightblue', 'pink', 'lightgreen', 'lightsalmon', 'silver', 'khaki']
+
+    ax.plot(x,y, lw=2, c=colors[i-1])
+    ax.annotate('d%02d'%i, xy=(tx, ty), fontsize=16, color=colors[i-1])
+
+
