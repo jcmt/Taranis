@@ -3,7 +3,7 @@ import datetime
 import netCDF4 as n4
 
 
-def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  domain=1, namelist='namelist.input', wrfinput='wrfinput_d01'):
+def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  domain=1, namelist='namelist.input', wrfinput='wrfinput_d01', emi=1e-6):
   e_we = int(search_namelist(filein=namelist, key='e_we', domain=domain))
   e_sn = int(search_namelist(filein=namelist, key='e_sn', domain=domain))
 
@@ -35,7 +35,7 @@ def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  d
   pos_lat = np.argmin(abs(lat[:, 1] - emi_lat))
   pos_lon = np.argmin(abs(lon[1, :] - emi_lon))
 
-  tracer[ini:fini, :, pos_lat, pos_lon] = 1.
+  tracer[ini:fini, :, pos_lat, pos_lon] = emi
 
   ### SAVE TO NETCDF
   root_grp = n4.Dataset('wrfchemi_d01_' + timestr[0], 'w', format='NETCDF3_64BIT')
@@ -62,7 +62,8 @@ def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  d
   root_grp.close()
 
   print('frames per outfile = ' + str(nt) + '\n')
-  print('interval  = 1 hour')
+  print('interval  = 1 hour \n')
+  print('emission  = '  str(emi) + '\n')
 
 def search_namelist(filein='namelist.input', key=None, domain=1):
   import re
