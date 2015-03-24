@@ -51,7 +51,8 @@ def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  d
   tracer_1 = root_grp.createVariable('tracer_1', 'f4', ('Time', 'emissions_zdim', 'south_north', 'west_east'))
 
   for i in range(nt):
-    Times[i, ] = timestr[i]
+    for j in range(len(timestr[0])):
+      Times[i,j] = timestr[i][j]
     tracer_1[i, ] = tracer[i, ]
 
   ### COPY ATTRIBUTES
