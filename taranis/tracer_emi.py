@@ -45,10 +45,16 @@ def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  d
   root_grp.createDimension('DateStrLen', len(timestr[0]))
   root_grp.createDimension('west_east', e_we)
   root_grp.createDimension('south_north', e_sn)
-  root_grp.createDimension('emissions_zdim', 1)
+  root_grp.createDimension('emissions_zdim', tracer.shape[1])
 
   Times = root_grp.createVariable('Times', 'S1', ('Time', 'DateStrLen'))
-  tracer_1 = root_grp.createVariable('tracer_1', 'f4', ('Time', 'emissions_zdim', 'south_north', 'west_east'))
+  tracer_1 = root_grp.createVariable('E_CO', 'f4', ('Time', 'emissions_zdim', 'south_north', 'west_east'))
+  tracer_1.FieldType = np.array(int(104.))
+  tracer_1.MemoryOrder = "XYZ"
+  tracer_1.description = "TRACER EMISSION RATE" ;
+  tracer_1.units = "ug/m3 m/s" ;
+  tracer_1.stagger = "" ;
+  tracer_1.coordinates = "XLONG XLAT" ;
 
   for i in range(nt):
     for j in range(len(timestr[0])):
@@ -62,9 +68,9 @@ def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  d
 
   root_grp.close()
 
-  print('frames per outfile = ' + str(nt) + '\n')
-  print('interval  = 1 hour \n')
-  print('emission  = '  str(emi) + '\n')
+  return print('frames per outfile = ' + str(nt) + '\n' \
+          + 'emission location (nlat, nlon) = '(pos_lat, pos_lon) + '\n' \
+          + 'interval  = 1 hour')
 
 def search_namelist(filein='namelist.input', key=None, domain=1):
   import re
