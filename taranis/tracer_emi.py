@@ -68,9 +68,9 @@ def tracer_emi(emi_lat=38.252, emi_lon=-28.53, emi_start=None, emi_stop=None,  d
 
   root_grp.close()
 
-  return print('frames per outfile = ' + str(nt) + '\n' \
-          + 'emission location (nlat, nlon) = '(pos_lat, pos_lon) + '\n' \
-          + 'interval  = 1 hour')
+  print('frames per outfile = ' + str(nt) + '\n' \
+        + 'emission location (nlat, nlon) = '(pos_lat, pos_lon) + '\n' \
+        + 'interval  = 1 hour')
 
 def search_namelist(filein='namelist.input', key=None, domain=1):
   import re

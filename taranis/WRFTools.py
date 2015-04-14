@@ -526,6 +526,62 @@ class get:
     return np.squeeze(IVAR)
 
 
+  def sounding(self, tstep=0, lat=38.28, lon=-28.24):
+    import SkewT
+    import thermodynamics
+
+    ny, nx = self.stloc(lat, lon)
+
+    data={}
+    data['pres'] = self.getvar('P', tstep=tstep, nlev=':', ny=ny, nx=nx) * 1e-2
+    data['MIXR'] = self.getvar('QVAPOR', tstep=tstep, nlev=':', ny=ny, nx=nx) * 1000.
+    data['temp'] = thermodynamics.TempK(self.getvar('T', tstep=tstep, nlev=':', ny=ny, nx=nx), data['pres'] * 1e2) - 273.15
+    data['dwpt'] = thermodynamics.MixR2VaporPress(data['MIXR']/1000. ,data['pres'])
+    data['sknt'] = self.WSPEED(tstep=tstep, nlev=':', ny=ny, nx=nx) * 1.94384449
+    data['drct'] = self.WDIR(tstep=tstep, nlev=':', ny=ny, nx=nx)
+    data['hght'] = self.getvar('HGT', tstep=tstep, nlev=':', ny=ny, nx=nx)
+    data['RELH'] = self.RH(tstep=tstep)[:, ny, nx]
+    data['StationNumber'] = 'Location = ' + str(lat) + ' N ' + str(lon) + ' E'
+    data['SoundingDate'] = self.time(tstep=tstep).strftime('%Y/%m/%d %H:%M')
+    data['THTV'] =  thermodynamics.ThetaV(data['temp']+273.15, data['pres']*1e2, thermodynamics.VaporPressure(data['dwpt']))
+#    data['THTA'] = 
+#    data['THTE'] = 
+
+    return SkewT.Sounding(data=data)
+
+
+  def WSPEED(self, tstep=0, nlev=0, ny=':', nx=':'):
+
+    if nx == ':':
+      u = self.getvar('U', tstep=tstep, nlev=nlev, ny=ny, nx=':-1')
+    elif ny == ':':
+      v = self.getvar('V', tstep=tstep, nlev=nlev, ny=':-1', nx=nx)
+    else: 
+      u = self.getvar('U', tstep=tstep, nlev=nlev, ny=ny, nx=nx)
+      v = self.getvar('V', tstep=tstep, nlev=nlev, ny=ny, nx=nx)
+
+    return np.sqrt(u*u + v*v)
+
+
+  def WDIR(self, tstep=0, nlev=0, ny=':', nx=':'):
+
+    if nx == ':':
+      u = self.getvar('U', tstep=tstep, nlev=nlev, ny=ny, nx=':-1')
+    elif ny == ':':
+      v = self.getvar('V', tstep=tstep, nlev=nlev, ny=':-1', nx=nx)
+    else:
+      u = self.getvar('U', tstep=tstep, nlev=nlev, ny=ny, nx=nx)
+      v = self.getvar('V', tstep=tstep, nlev=nlev, ny=ny, nx=nx)
+
+    wspeed = self.WSPEED(tstep=tstep, nlev=nlev, ny=ny, nx=nx)
+
+    dir_rad = np.arctan2(u/wspeed, v/wspeed)
+    dir_trig = (dir_rad * 180/np.pi) + 180
+    dir_cardinal = 90 - dir_trig
+
+    return dir_cardinal
+
+
 def myround(x, base=5):
   x *= 100
   y = int(base * round(float(x)/base))
