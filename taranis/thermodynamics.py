@@ -1,4 +1,5 @@
 from numpy import interp,pi,cos,sin,arctan2,sqrt,linspace,min,exp,log,where
+import warnings                  
 
 #-----------------------------------------------------------------------
 # Here we go. A set of functions that I use from time to time to calculate 
@@ -14,7 +15,7 @@ Cv_da=719.            # Specific heat at constant volume for dry air
 Cp_v=1870.            # Specific heat at constant pressure for water vapour
 Cv_v=1410.            # Specific heat at constant volume for water vapour
 Cp_lw=4218	      # Specific heat at constant pressure for liquid water
-Epsilon=0.622         # Epsilon=R_s_da/R_s_v; The ratio of the gas constants
+Epsilon=0.622         # Epsilon=Rs_da/Rs_v; The ratio of the gas constants
 degCtoK=273.15        # Temperature offset between K and C (deg C)
 rho_w=1000.           # Liquid Water density kg m^{-3}
 grav=9.81             # Gravity, m s^{-2}
@@ -38,14 +39,14 @@ def Theta(tempk,pres,pref=100000.):
     Prints a warning if a pressure value below 2000 Pa input, to ensure
     that the units were input correctly.
     """
-
+    
     try:
 	minpres=min(pres)
-    except TypeError:
+    except TypeError as e:
 	minpres=pres
 
     if minpres<2000:
-	print "WARNING: P<2000 Pa; did you input a value in hPa?"
+	warnings.warn("WARNING: P<2000 Pa; did you input a value in hPa?")
 
     return tempk*(pref/pres)**(Rs_da/Cp_da)
 
@@ -58,7 +59,7 @@ def TempK(theta,pres,pref=100000.):
 	minpres=pres
 
     if minpres<2000:
-	print "WARNING: P<2000 Pa; did you input a value in hPa?"
+	warnings.warn("WARNING: P<2000 Pa; did you input a value in hPa?")
 
     return theta*(pres/pref)**(Rs_da/Cp_da)
 
@@ -113,8 +114,39 @@ def GammaW(tempk,pres,e=None):
     Gamma=(A/B)/(Cp_da*Rho)
     return Gamma
 
+def DensityHumid(tempk,pres,e):
+    """Density of moist air.
+    This is a bit more explicit ant less confusing than the method below.
+
+    INPUTS:
+    tempk: Temperature (K)
+    pres: static pressure (Pa)
+    mixr: mixing ratio (kg/kg)
+
+    OUTPUTS: 
+    rho_air (kg/m^3)
+
+    SOURCE: http://en.wikipedia.org/wiki/Density_of_air
+    """
+
+    pres_da=pres-e
+    rho_da=pres_da/(Rs_da*tempk)
+    rho_wv=e/(Rs_v*tempk)
+
+    return rho_da+rho_wv
+
+
 def Density(tempk,pres,mixr):
-    """Density of moist air"""
+    """Density of moist air
+
+    INPUTS:
+    tempk: Temperature (K)
+    pres: static pressure (Pa)
+    mixr: mixing ratio (kg/kg)
+
+    OUTPUTS: 
+    rho_air (kg/m^3)
+    """
     
     virtualT=VirtualTempFromMixR(tempk,mixr)
     return pres/(Rs_da*virtualT)
@@ -228,8 +260,6 @@ def MixR2VaporPress(qv,p):
 
     return qv*p/(Epsilon+qv)
 
-
-
 def VaporPressure(dwpt):
     """Water vapor pressure
     INPUTS
@@ -256,5 +286,4 @@ def DewPoint(e):
     ln_ratio=log(e/611.2)
     Td=((17.67-ln_ratio)*degCtoK+243.5*ln_ratio)/(17.67-ln_ratio)
     return Td-degCtoK
-
 
