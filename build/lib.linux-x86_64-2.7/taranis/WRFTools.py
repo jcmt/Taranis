@@ -49,7 +49,7 @@ class get:
         will be used
     '''
 
-    if tstep==None:
+    if not tstep:
       Z = self.getvar('PH', tstep=':', nlev=nlev, ny=ny, nx=nx) / 9.81
 
     else:
@@ -62,7 +62,7 @@ class get:
     '''
 
     tstart = self.nc.SIMULATION_START_DATE
-    if tstep==None:
+    if not tstep:
       t = self.nc.variables['XTIME'][...]
     else:
       t = self.nc.variables['XTIME'][tstep]
@@ -368,7 +368,7 @@ class get:
     import matplotlib.pyplot as plt
     import ticks
 
-    if tstep==None:
+    if not tstep:
       return "A time step must be specified..."
     else:
       if isinstance(VAR, str):
@@ -415,8 +415,8 @@ class get:
 
       x, y = m(self.lon(), self.lat())
 
-      if pcolor == False:
-        if norm == None:
+      if not pcolor:
+        if not norm:
           levels = np.linspace(VAR.min(), VAR.max(), 200)
         else:
           levels = np.linspace(norm.min(), norm.max(), 200)
@@ -426,9 +426,9 @@ class get:
 
       ax.set_title(self.time(tstep=tstep))
 
-      if colorbar == True:
+      if colorbar:
         fmt = plt.matplotlib.ticker.FormatStrFormatter("%.1f")
-        if norm == None:
+        if not norm:
           clev = np.linspace(np.round(VAR.min()), np.round(VAR.max()), 10, endpoint=True)
         else:
           clev = np.linspace(np.round(norm.min()), np.round(norm.max()), 10, endpoint=True)
@@ -442,17 +442,17 @@ class get:
     plt.figure()
     ax = plt.axes(axisbg='grey')
 
-    if latitude == None and longitude == None:
+    if not latitude and not longitude:
       return('A latitude and longitude range must be chosen...')
 
-    elif latitude == None:
+    elif not latitude:
       pos_lon = np.argmin(abs(self.lon()[1, :] - longitude))
       pos_lat = slice(0, np.size(self.lat(), axis=0))
       y = self.height(tstep=tstep, nlev=':', ny=pos_lat, nx=pos_lon)
       x = np.tile(self.lat()[:, pos_lon], (self.dim()[1], 1))
       xlabel = 'Latitude ($^\circ$)'
 
-    elif longitude == None:
+    elif not longitude:
       pos_lon = slice(0, np.size(self.lon(), axis=1))
       pos_lat = np.argmin(abs(self.lat()[:, 1] - latitude))
       y = self.height(tstep=tstep, ny=pos_lat, nx=pos_lon)
@@ -473,8 +473,8 @@ class get:
     else:
       VAR = np.squeeze(VAR[:, pos_lat, pos_lon])
 
-    if pcolor == False:
-      if lev == None:
+    if not pcolor:
+      if not lev:
         levels = np.linspace(VAR.min(), VAR.max(), 200)
       else:
         levels = np.linspace(lev[0], lev[1], 100)
@@ -483,9 +483,9 @@ class get:
     else:
       cs = ax.pcolormesh(x[0:VAR.shape[0], :], y[0:VAR.shape[0], :], VAR, norm=norm, **kargs)
 
-    if colorbar == True:
+    if colorbar:
       fmt = plt.matplotlib.ticker.FormatStrFormatter("%.1f")
-      if lev == None:
+      if not lev:
         clev = np.linspace(np.round(VAR.min()), np.round(VAR.max()), 10)
       else:
         clev = np.linspace(lev[0], lev[1], 10)
@@ -511,11 +511,11 @@ class get:
     intp = tri.delaunay.Triangulation(self.lat().flatten(), self.lon().flatten())
 
     if isinstance(VAR, str):
-      if (nlev == None) & (tstep != None):
+      if (not nlev) & (tstep):
         data =  self.getvar(VAR, tstep=tstep)[0, ]
-      elif (nlev != None) & (tstep == None):
+      elif (nlev) & (not tstep):
         data =  self.getvar(VAR, nlev=nlev)
-      elif (nlev == None) & (tstep == None):
+      elif (not nlev) & (not tstep):
         pass
     else:
       data = VAR

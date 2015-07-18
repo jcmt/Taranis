@@ -11,10 +11,19 @@ class get:
     self.nc.close()
 
   def variables(self):
+    '''
+    Prints the variables in the wrfout file.
+    '''
+
     varname = np.asarray([v for v in self.nc.variables])
     return varname
 
   def dim(self):
+    '''
+    Returns an array containing the domain dimensios
+    time, levels, latitude, longitude
+    '''
+
     nt = len(self.nc.dimensions['Time'])
     nx = len(self.nc.dimensions['west_east'])
     ny = len(self.nc.dimensions['south_north'])
@@ -324,6 +333,16 @@ class get:
     return WRF_TK
 
   def BRUNT(self, tstep=0):
+    '''
+    Calculation of Brunt-Vaisala frequency.
+
+    usage:
+       BV = BRUNT(tstep)
+
+       tstep is the time instant, if not specified the first written time
+       will be used
+    '''
+
     THETA  =  self.getvar('T', tstep=tstep) * (1 + 0.61 * self.getvar('QVAPOR', tstep=tstep))
     Z = self.height(tstep=tstep)
     nz = self.dim()[1]
@@ -336,6 +355,16 @@ class get:
     return BRUNT
 
   def RI(self, tstep=0):
+    '''
+    Calculation of Richardson Number.
+
+    usage:
+       ri = RI(tstep)
+
+       tstep is the time instant, if not specified the first written time
+       will be used
+    '''
+
     THETA  =  self.getvar('T', tstep=tstep) * (1 + 0.61 * self.getvar('QVAPOR', tstep=tstep))
     Z = self.height(tstep=tstep)
     U  = self.getvar('U', tstep=tstep, nx=':-1')
@@ -439,6 +468,23 @@ class get:
   def CrossPcolor(self, VAR, tstep=1, latitude=None, longitude=None, colorbar=True, \
                   norm=None, ymax=20000, ymin=0, pcolor=True, lev=None, **kargs):
     import matplotlib.pyplot as plt
+
+
+    '''
+    VErtical cross section plot
+
+    usage:
+       pcolor(VAR, latitude, longitude, colormap, colorbar, tstep, level, shading, norm,
+       lev)
+
+       VAR is a wrfout variable (string) or a 2D numpy array
+       if VAR is tring a tstep and level must be given to acquire the
+       variable. IF NOT the first level and time will be used
+       shading can be one of: flat (default), interp (contourf) or None
+       (pcolor)
+    '''
+
+
     plt.figure()
     ax = plt.axes(axisbg='grey')
 
@@ -501,12 +547,26 @@ class get:
     return ax
 
   def stloc(self, latitude, longitude):
+    '''
+    Returns nearst the grid points to location
+
+    usage:
+        nlat, nlon = stloc(latitude, longitude)
+    '''
+
     pos_lat = np.argmin(abs(self.lat()[:, 1] - latitude))
     pos_lon = np.argmin(abs(self.lon()[1, :] - longitude))
     return pos_lat, pos_lon
 
   def interpvar(self, VAR, ilon, ilat, tstep=None, nlev=None):
     from matplotlib import tri
+
+    '''
+    Interpolates variable to latitude longitude (2D)
+
+    usage:
+        IVAR = interpvar(VAR, longitude, latitude, tstep, nlev)
+    '''
 
     intp = tri.delaunay.Triangulation(self.lat().flatten(), self.lon().flatten())
 
@@ -529,6 +589,11 @@ class get:
   def sounding(self, tstep=0, lat=38.28, lon=-28.24):
     import SkewT
     import thermodynamics
+
+ 
+    '''
+    Creates a virtual sounding
+    '''  
 
     ny, nx = self.stloc(lat, lon)
 
